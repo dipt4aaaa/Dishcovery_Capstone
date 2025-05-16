@@ -22,6 +22,7 @@ chatbot-resep/
 ## Langkah 1: Persiapan Lingkungan
 
 ### Prasyarat
+
 - Docker dan Docker Compose terinstall
 - Git (opsional)
 - Dataset resep makanan (`resep_makananv2.csv`)
@@ -35,6 +36,7 @@ mkdir -p chatbot-resep/{backend,frontend,data}
 ## Langkah 2: Menyiapkan Dataset
 
 Letakkan file `resep_makananv2.csv` di direktori `data/`. Pastikan file CSV memiliki kolom-kolom berikut:
+
 - `Title Cleaned`: Judul resep
 - `Ingredients Cleaned`: Daftar bahan-bahan
 - `Steps`: Langkah-langkah memasak
@@ -76,7 +78,7 @@ Salin konfigurasi Docker Compose yang telah diberikan ke file `docker-compose.ym
 ### 1. Build dan jalankan container
 
 ```bash
-cd chatbot-resep
+cd Dishcovery_Capstone
 docker-compose up -d
 ```
 
@@ -93,6 +95,7 @@ Pastikan semua container berjalan (status "Up").
 ### 3. Akses aplikasi
 
 Buka browser dan akses:
+
 - Frontend: `http://localhost`
 - Backend API: `http://localhost:8000`
 
