@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resep Buddy - Chatbot Rekomendasi Makanan</title>
+    <title>DishCovery - Chatbot Rekomendasi Makanan</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -277,17 +277,17 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-utensils"></i> Resep Buddy</h1>
+            <h1><i class="fas fa-utensils"></i> DishCovery</h1>
             <p>Asisten masak virtual yang membantu Anda menemukan resep berdasarkan bahan-bahan yang Anda miliki!</p>
         </header>
 
         <div class="chat-container">
             <div class="chat-header">
-                <i class="fas fa-robot"></i> Chat dengan Resep Buddy
+                <i class="fas fa-robot"></i> Chat dengan DishCovery
             </div>
             <div class="chat-messages" id="chat-messages">
                 <div class="message bot-message">
-                    Halo! Saya Resep Buddy, asisten masak virtual Anda. Beritahu saya bahan-bahan yang Anda miliki, dan
+                    Halo! Saya Dishcovery, asisten masak virtual Anda. Beritahu saya bahan-bahan yang Anda miliki, dan
                     saya akan merekomendasikan resep yang bisa Anda masak. Misalnya: "Saya punya ayam dan kecap, bisa
                     masak apa ya?"
                 </div>
@@ -360,7 +360,7 @@
                     // Tampilkan indikator loading
                     const loadingDiv = document.createElement('div');
                     loadingDiv.className = 'loading';
-                    loadingDiv.innerHTML = 'Resep Buddy sedang berpikir <div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+                    loadingDiv.innerHTML = 'DishCovery sedang berpikir <div class="dot"></div><div class="dot"></div><div class="dot"></div>';
                     chatMessages.appendChild(loadingDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
 
