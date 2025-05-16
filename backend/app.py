@@ -35,7 +35,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 # Load dataset resep
 try:
-    df_resep = pd.read_csv("resep_makananv2.csv")
+    df_resep = pd.read_csv("data/resep_makananv2.csv")
     logger.info(f"Dataset berhasil dimuat. Total {len(df_resep)} resep tersedia.")
 except Exception as e:
     logger.error(f"Gagal memuat dataset: {e}")
