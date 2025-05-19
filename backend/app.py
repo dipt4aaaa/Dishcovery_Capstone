@@ -3,6 +3,8 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 from pydantic import BaseModel
 import httpx
 import uvicorn
@@ -30,16 +32,25 @@ class ChatRequest(BaseModel):
 
 # URL Ollama API, sesuaikan dengan konfigurasi Anda
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
-# Model LLM yang digunakan (Llama2 atau Mistral)
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
+# Model LLM yang digunakan (Llama3 atau Mistral)
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
 # Load dataset resep
 try:
-    df_resep = pd.read_csv("resep_makananv2.csv")
+    df_resep = pd.read_csv("data/resep_makananv2.csv")
     logger.info(f"Dataset berhasil dimuat. Total {len(df_resep)} resep tersedia.")
+    # Gabungkan kolom untuk TF-IDF
+    df_resep["combined"] = (
+        df_resep["Title Cleaned"].astype(str) + " " +
+        df_resep["Ingredients Cleaned"].astype(str)
+    )
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(df_resep["combined"])
 except Exception as e:
     logger.error(f"Gagal memuat dataset: {e}")
     df_resep = None
+    vectorizer = None
+    tfidf_matrix = None
 
 # Fungsi untuk memformat dataset sebagai konteks untuk LLM
 def prepare_context():
@@ -47,7 +58,7 @@ def prepare_context():
         return "Dataset resep tidak tersedia."
     
     # Ambil sampel resep untuk konteks (dibatasi untuk efisiensi)
-    sample_resep = df_resep.sample(min(5, len(df_resep)))
+    sample_resep = df_resep.sample(min(50, len(df_resep)))
     
     context = "Berikut adalah beberapa contoh resep Indonesia:\n\n"
     for _, row in sample_resep.iterrows():
@@ -58,24 +69,29 @@ def prepare_context():
     return context
 
 # Fungsi untuk mencari resep berdasarkan bahan
-def cari_resep_dengan_bahan(bahan_list):
-    """Mencari resep yang mengandung bahan-bahan yang disebutkan."""
-    if df_resep is None:
+def cari_resep_dengan_bahan(bahan_list, top_n=5):
+    """Mencari resep yang paling mirip dengan bahan-bahan yang disebutkan menggunakan TF-IDF."""
+    if df_resep is None or vectorizer is None or tfidf_matrix is None:
         return []
-    
+
+    # Gabungkan bahan user jadi satu string (misal: "ayam bawang cabe")
+    user_input = " ".join([b.strip().lower() for b in bahan_list if b.strip()])
+    if not user_input:
+        return []
+
+    user_vec = vectorizer.transform([user_input])
+    cosine_sim = cosine_similarity(user_vec, tfidf_matrix).flatten()
+    top_indices = cosine_sim.argsort()[-top_n:][::-1]
+
     hasil_resep = []
-    bahan_lowercase = [b.lower().strip() for b in bahan_list]
-    
-    for _, row in df_resep.iterrows():
-        ingredients = row['Ingredients Cleaned'].lower()
-        if all(bahan in ingredients for bahan in bahan_lowercase):
-            hasil_resep.append({
-                "nama": row['Title Cleaned'],
-                "bahan": row['Ingredients Cleaned'],
-                "langkah": row['Steps']
-            })
-    
-    return hasil_resep[:5]  # Batasi hasil
+    for idx in top_indices:
+        row = df_resep.iloc[idx]
+        hasil_resep.append({
+            "nama": row['Title Cleaned'],
+            "bahan": row['Ingredients Cleaned'],
+            "langkah": row['Steps']
+        })
+    return hasil_resep
 
 # Fungsi untuk mengirim prompt ke Ollama
 async def query_ollama(user_message, system_prompt):
@@ -141,9 +157,9 @@ async def chat(request: ChatRequest):
     
     # Siapkan system prompt dengan konteks resep
     system_prompt = """
-    Kamu adalah chatbot rekomendasi makanan Indonesia yang bernama DishCovery yang membantu pengguna menemukan resep berdasarkan bahan-bahan yang mereka miliki.
+    Perkenalkan, aku Dishcovery, chatbot rekomendasi makanan Indonesia yang membantu pengguna menemukan resep berdasarkan bahan-bahan yang mereka miliki.
     Berikan jawaban yang natural, informatif, dan dalam Bahasa Indonesia.
-    
+
     Tips untuk menjawab:
     1. Jika pengguna menanyakan resep dengan bahan tertentu, berikan 1-3 rekomendasi resep yang sesuai.
     2. Berikan nama resep, bahan-bahan yang diperlukan, dan cara membuatnya secara singkat.
