@@ -30,12 +30,12 @@ class ChatRequest(BaseModel):
 
 # URL Ollama API, sesuaikan dengan konfigurasi Anda
 OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
-# Model LLM yang digunakan (Llama3 atau Mistral)
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+# Model LLM yang digunakan (Llama2 atau Mistral)
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama2")
 
 # Load dataset resep
 try:
-    df_resep = pd.read_csv("data/resep_makananv2.csv")
+    df_resep = pd.read_csv("resep_makananv2.csv")
     logger.info(f"Dataset berhasil dimuat. Total {len(df_resep)} resep tersedia.")
 except Exception as e:
     logger.error(f"Gagal memuat dataset: {e}")
@@ -47,7 +47,7 @@ def prepare_context():
         return "Dataset resep tidak tersedia."
     
     # Ambil sampel resep untuk konteks (dibatasi untuk efisiensi)
-    sample_resep = df_resep.sample(min(50, len(df_resep)))
+    sample_resep = df_resep.sample(min(5, len(df_resep)))
     
     context = "Berikut adalah beberapa contoh resep Indonesia:\n\n"
     for _, row in sample_resep.iterrows():
@@ -141,9 +141,9 @@ async def chat(request: ChatRequest):
     
     # Siapkan system prompt dengan konteks resep
     system_prompt = """
-    Perkenalkan, aku Dishcovery, chatbot rekomendasi makanan Indonesia yang membantu pengguna menemukan resep berdasarkan bahan-bahan yang mereka miliki.
+    Kamu adalah chatbot rekomendasi makanan Indonesia yang bernama DishCovery yang membantu pengguna menemukan resep berdasarkan bahan-bahan yang mereka miliki.
     Berikan jawaban yang natural, informatif, dan dalam Bahasa Indonesia.
-
+    
     Tips untuk menjawab:
     1. Jika pengguna menanyakan resep dengan bahan tertentu, berikan 1-3 rekomendasi resep yang sesuai.
     2. Berikan nama resep, bahan-bahan yang diperlukan, dan cara membuatnya secara singkat.

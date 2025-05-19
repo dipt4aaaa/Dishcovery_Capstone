@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   ollama:
@@ -12,7 +12,7 @@ services:
     entrypoint: >
       sh -c "ollama serve &
              sleep 10 &&
-             ollama pull llama3 &&
+             ollama pull llama2 &&
              wait"
 
   backend:
@@ -23,7 +23,7 @@ services:
       - "8000:8000"
     environment:
       - OLLAMA_API_URL=http://ollama:11434/api/generate
-      - OLLAMA_MODEL=llama3
+      - OLLAMA_MODEL=llama2
       - PORT=8000
     volumes:
       - ./backend:/app
