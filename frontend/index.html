@@ -74,6 +74,23 @@
             text-align: center;
             font-weight: bold;
             font-size: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-title {
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .preferences-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 10px;
         }
 
         .chat-messages {
@@ -242,6 +259,141 @@
             font-size: 0.9rem;
         }
 
+        /* Preferences Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: var(--box-shadow);
+            animation: slideIn 0.4s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e6e6e6;
+        }
+
+        .modal-header h3 {
+            color: var(--primary-color);
+            font-size: 1.4rem;
+        }
+
+        .close-modal {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-modal:hover {
+            color: var(--primary-color);
+        }
+
+        .preferences-section {
+            margin-bottom: 20px;
+        }
+
+        .preferences-section h4 {
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+
+        .preferences-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .preference-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+        }
+
+        .preference-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .preference-item input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .preference-item label {
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .modal-footer {
+            text-align: right;
+            padding-top: 15px;
+            margin-top: 15px;
+            border-top: 1px solid #e6e6e6;
+        }
+
+        .save-preferences {
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .save-preferences:hover {
+            background-color: #25a99c;
+        }
+
+        .preferences-active {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.8rem;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .container {
@@ -254,6 +406,15 @@
 
             .message {
                 max-width: 90%;
+            }
+
+            .preferences-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 90%;
+                margin: 20% auto;
             }
         }
 
@@ -283,13 +444,22 @@
 
         <div class="chat-container">
             <div class="chat-header">
-                <i class="fas fa-robot"></i> Chat dengan DishCovery
+                <button class="preferences-btn" id="preferences-btn" aria-label="Preferensi Makanan">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <div class="chat-header-title">
+                    <i class="fas fa-robot"></i> Chat dengan DishCovery
+                    <span class="preferences-active" id="preferences-badge" style="display: none;">Preferensi Aktif</span>
+                </div>
+                <div style="width: 24px;"></div> <!-- Spacer for balance -->
             </div>
             <div class="chat-messages" id="chat-messages">
                 <div class="message bot-message">
                     Halo! Saya Dishcovery, asisten masak virtual Anda. Beritahu saya bahan-bahan yang Anda miliki, dan
                     saya akan merekomendasikan resep yang bisa Anda masak. Misalnya: "Saya punya ayam dan kecap, bisa
                     masak apa ya?"
+                    <br><br>
+                    Saya juga bisa menyarankan resep berdasarkan preferensi diet Anda, seperti vegan, vegetarian, atau bebas gluten. Klik ikon <i class="fas fa-sliders-h"></i> di pojok kiri atas untuk mengatur preferensi Anda.
                 </div>
             </div>
             <div class="chat-input">
@@ -307,14 +477,73 @@
                 <div class="query-item">Saya punya telur dan tepung, bisa masak apa?</div>
                 <div class="query-item">Bahan saya cuma ayam dan bawang, ada resep apa?</div>
                 <div class="query-item">Mau masak yang cepat dengan mie instan</div>
-                <div class="query-item">Ada resep enak dengan tempe?</div>
-                <div class="query-item">Lagi pengen makanan pedas, bisa sarankan?</div>
+                <div class="query-item">Ada resep vegan dengan tempe dan tahu?</div>
+                <div class="query-item">Lagi pengen makanan pedas rendah karbo</div>
             </div>
         </div>
 
         <footer>
-            <p>Capstone Project - Chatbot Rekomendasi Makanan dengan Ollama LLM &copy; 2025</p>
+            <p>Capstone Project - Chatbot Rekomendasi Makanan dengan Llama3 LLM &copy; 2025</p>
         </footer>
+    </div>
+
+    <!-- Modal Preferensi -->
+    <div id="preferences-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Preferensi Makanan</h3>
+                <span class="close-modal" id="close-modal">&times;</span>
+            </div>
+            <div class="preferences-section">
+                <h4>Preferensi Diet</h4>
+                <div class="preferences-grid" id="diet-preferences">
+                    <div class="preference-item">
+                        <input type="checkbox" id="vegan" name="vegan">
+                        <label for="vegan">Vegan</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="vegetarian" name="vegetarian">
+                        <label for="vegetarian">Vegetarian</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="non_dairy" name="non_dairy">
+                        <label for="non_dairy">Non-Dairy</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="gluten_free" name="gluten_free">
+                        <label for="gluten_free">Bebas Gluten</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="low_carb" name="low_carb">
+                        <label for="low_carb">Rendah Karbo</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="high_protein" name="high_protein">
+                        <label for="high_protein">Tinggi Protein</label>
+                    </div>
+                </div>
+            </div>
+            <div class="preferences-section">
+                <h4>Fokus Nutrisi</h4>
+                <div class="preferences-grid" id="nutrition-preferences">
+                    <div class="preference-item">
+                        <input type="checkbox" id="protein" name="protein">
+                        <label for="protein">Protein</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="karbohidrat" name="karbohidrat">
+                        <label for="karbohidrat">Karbohidrat</label>
+                    </div>
+                    <div class="preference-item">
+                        <input type="checkbox" id="serat" name="serat">
+                        <label for="serat">Serat</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="save-preferences" id="save-preferences">Simpan Preferensi</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -323,10 +552,29 @@
             const userInput = document.getElementById('user-input');
             const sendButton = document.getElementById('send-button');
             const queryItems = document.querySelectorAll('.query-item');
+            const preferencesBtn = document.getElementById('preferences-btn');
+            const preferencesModal = document.getElementById('preferences-modal');
+            const closeModal = document.getElementById('close-modal');
+            const savePreferences = document.getElementById('save-preferences');
+            const preferencesBadge = document.getElementById('preferences-badge');
 
             // Konfigurasi API endpoint - ganti dengan URL backend Anda
             const API_URL = 'http://localhost:8000/chat';
+            const PREFERENCES_URL = 'http://localhost:8000/preferences';
             let isWaitingForResponse = false;
+            
+            // Simpan preferensi pengguna
+            let userPreferences = {};
+            
+            // Fungsi untuk memeriksa apakah ada preferensi aktif
+            function hasActivePreferences() {
+                return Object.values(userPreferences).some(value => value === true);
+            }
+            
+            // Fungsi untuk memperbarui badge preferensi
+            function updatePreferencesBadge() {
+                preferencesBadge.style.display = hasActivePreferences() ? 'inline-block' : 'none';
+            }
 
             // Event listener untuk tombol kirim
             sendButton.addEventListener('click', sendMessage);
@@ -345,6 +593,71 @@
                     sendMessage();
                 });
             });
+            
+            // Event listener untuk tombol preferensi
+            preferencesBtn.addEventListener('click', function() {
+                preferencesModal.style.display = 'block';
+            });
+            
+            // Event listener untuk tombol tutup modal
+            closeModal.addEventListener('click', function() {
+                preferencesModal.style.display = 'none';
+            });
+            
+            // Event listener untuk klik di luar modal
+            window.addEventListener('click', function(event) {
+                if (event.target === preferencesModal) {
+                    preferencesModal.style.display = 'none';
+                }
+            });
+            
+            // Event listener untuk tombol simpan preferensi
+            savePreferences.addEventListener('click', function() {
+                // Reset preferensi
+                userPreferences = {};
+                
+                // Kumpulkan preferensi diet
+                document.querySelectorAll('#diet-preferences input[type="checkbox"]').forEach(checkbox => {
+                    if (checkbox.checked) {
+                        userPreferences[checkbox.name] = true;
+                    }
+                });
+                
+                // Kumpulkan preferensi nutrisi
+                document.querySelectorAll('#nutrition-preferences input[type="checkbox"]').forEach(checkbox => {
+                    if (checkbox.checked) {
+                        userPreferences[`prefer_${checkbox.name}`] = true;
+                    }
+                });
+                
+                // Perbarui badge preferensi
+                updatePreferencesBadge();
+                
+                // Tutup modal
+                preferencesModal.style.display = 'none';
+                
+                // Tambahkan pesan informasi di chat
+                if (hasActivePreferences()) {
+                    addMessage('Preferensi Anda telah disimpan. Saya akan merekomendasikan resep yang sesuai dengan preferensi Anda.', 'bot');
+                } else {
+                    addMessage('Preferensi Anda telah direset. Saya akan merekomendasikan berbagai resep untuk Anda.', 'bot');
+                }
+            });
+
+            // Fungsi untuk mengambil daftar preferensi yang tersedia dari API
+            async function fetchAvailablePreferences() {
+                try {
+                    const response = await fetch(PREFERENCES_URL);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error fetching preferences:', error);
+                    return null;
+                }
+            }
 
             // Fungsi untuk mengirim pesan
             function sendMessage() {
@@ -368,13 +681,19 @@
                     isWaitingForResponse = true;
                     sendButton.disabled = true;
 
+                    // Buat payload untuk API dengan preferensi pengguna
+                    const payload = {
+                        message: message,
+                        preferences: hasActivePreferences() ? userPreferences : null
+                    };
+
                     // Kirim permintaan ke API
                     fetch(API_URL, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ message: message })
+                        body: JSON.stringify(payload)
                     })
                         .then(response => {
                             if (!response.ok) {
@@ -437,6 +756,17 @@
 
             // Fokus ke input field saat halaman dimuat
             userInput.focus();
+            
+            // Coba ambil preferensi yang tersedia dari API saat halaman dimuat
+            fetchAvailablePreferences()
+                .then(preferences => {
+                    if (preferences) {
+                        console.log('Available preferences:', preferences);
+                        
+                        // Bisa digunakan untuk memperbarui UI preferensi secara dinamis jika diperlukan
+                        // Misalnya, menambahkan opsi preferensi baru berdasarkan respons API
+                    }
+                });
         });
     </script>
 </body>
