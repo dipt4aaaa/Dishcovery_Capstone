@@ -106,7 +106,84 @@ except Exception as e:
 def extract_keywords(text):
     """Ekstrak kata kunci dari input pengguna untuk meningkatkan relevansi pencarian."""
     # Daftar kata kunci terkait makanan atau bahan
-    food_keywords = ["ayam", "daging", "sayur", "ikan", "nasi", "mie", "goreng", "rebus", "tumis"]
+    food_keywords = [
+    # Protein hewani
+    "ayam", "daging", "sapi", "kambing", "ikan", "udang", "cumi", "telur",
+    "bebek", "burung", "kepiting", "kerang", "lobster", "gurita", "teri", "tongkol",
+    "tuna", "salmon", "lele", "nila", "bandeng", "patin", "kakap", "bawal",
+    "sardines", "makarel", "cakalang", "bakso", "sosis", "kornet", "nugget",
+    
+    # Protein nabati
+    "tempe", "tahu", "oncom", "kacang tanah", "kacang merah", "kacang hijau",
+    "kacang kedelai", "kacang almond", "kacang mete", "kacang kenari", "edamame",
+    
+    # Sayuran
+    "kentang", "wortel", "kol", "bayam", "brokoli", "buncis", "labu", "kacang panjang",
+    "jagung", "sawi", "tomat", "cabai", "terong", "okra", "pare", "mentimun",
+    "selada", "kangkung", "singkong", "ubi", "talas", "rebung", "petai", "jengkol",
+    "jamur", "jamur tiram", "jamur shitake", "bean sprout", "tauge", "paprika",
+    "zucchini", "asparagus", "bit", "lobak", "daikon",
+    
+    # Bumbu dan rempah
+    "cabai", "bawang", "bawang merah", "bawang putih", "bawang bombay", "seledri",
+    "daun bawang", "daun salam", "daun jeruk", "jahe", "kunyit", "lengkuas",
+    "kencur", "sereh", "pandan", "kayu manis", "cengkeh", "pala", "ketumbar",
+    "jinten", "adas", "kapulaga", "kemiri", "asam jawa", "asam kandis",
+    "belimbing wuluh", "daun kemangi", "daun mint", "oregano", "basil", "thyme",
+    "rosemary", "lada hitam", "lada putih", "merica", "vanili", "garam", "gula",
+    
+    # Saus dan bumbu siap pakai
+    "santan", "kecap", "kecap manis", "kecap asin", "terasi", "saus tiram",
+    "saus sambal", "saus tomat", "mayonaise", "mustard", "worcestershire",
+    "miso", "soy sauce", "fish sauce", "oyster sauce", "hoisin sauce",
+    "sriracha", "tabasco", "bumbu instant", "bumbu rendang", "bumbu gulai",
+    
+    # Karbohidrat
+    "tepung", "tepung terigu", "tepung beras", "tepung tapioka", "tepung maizena",
+    "tepung sagu", "beras", "nasi", "nasi putih", "nasi merah", "nasi hitam",
+    "mie", "mie instant", "pasta", "spaghetti", "macaroni", "fettuccine",
+    "roti", "roti tawar", "roti gandum", "bagel", "croissant", "tortilla",
+    "crackers", "biskuit", "oatmeal", "quinoa", "barley", "couscous",
+    
+    # Produk susu
+    "mentega", "susu", "susu sapi", "susu kambing", "susu almond", "susu kedelai",
+    "keju", "keju cheddar", "keju mozzarella", "keju parmesan", "yogurt",
+    "greek yogurt", "krim", "whipping cream", "sour cream", "condensed milk",
+    "evaporated milk", "buttermilk",
+    
+    # Minyak dan lemak
+    "minyak", "minyak goreng", "minyak kelapa", "minyak zaitun", "minyak wijen",
+    "minyak jagung", "minyak canola", "ghee", "lard", "margarin",
+    
+    # Buah-buahan
+    "apel", "pisang", "jeruk", "mangga", "pepaya", "semangka", "melon",
+    "anggur", "strawberry", "blueberry", "raspberry", "blackberry", "kiwi",
+    "nanas", "kelapa", "alpukat", "jambu", "rambutan", "leci", "longan",
+    "durian", "manggis", "salak", "duku", "langsat", "belimbing", "sawo",
+    "markisa", "sirsak", "sukun", "nangka", "cempedak",
+    
+    # Bumbu kering dan biji-bijian
+    "wijen", "chia seed", "flaxseed", "sunflower seed", "pumpkin seed",
+    "sesame oil", "coconut oil", "olive oil",
+    
+    # Cairan dan kaldu
+    "air", "kaldu", "kaldu ayam", "kaldu sapi", "kaldu sayur", "air kelapa",
+    "coconut water", "stock", "broth", "wine", "sake", "mirin",
+    
+    # Makanan fermentasi dan awetan
+    "acar", "kimchi", "sauerkraut", "pickle", "olive", "capers", "anchovy",
+    "bacon", "ham", "prosciutto", "salami", "dendeng", "abon", "kerupuk",
+    "emping", "rempeyek",
+    
+    # Dessert dan pemanis
+    "gula pasir", "gula merah", "gula aren", "madu", "sirup maple", "sirup jagung",
+    "brown sugar", "coconut sugar", "stevia", "artificial sweetener",
+    "cokelat", "chocolate", "cocoa powder", "vanilla extract", "food coloring",
+    
+    # Makanan beku dan olahan
+    "es krim", "frozen vegetables", "frozen fruit", "fish stick", "chicken nugget",
+    "frozen pizza", "dim sum", "dumpling", "gyoza", "spring roll", "lumpia"
+]
     
     # Pola untuk mendeteksi preferensi diet
     diet_patterns = {
