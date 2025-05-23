@@ -1,0 +1,19 @@
+# Kebutuhan dasar untuk Hugging Face dan PyTorch
+torch --index-url https://download.pytorch.org/whl/cu121 # Sesuaikan cu118 atau cu121 tergantung CUDA Anda
+transformers
+datasets
+accelerate
+einops # Sering dibutuhkan oleh transformers
+scipy # Sering dibutuhkan oleh transformers
+
+# Untuk LoRA/QLoRA dan training yang efisien
+peft
+bitsandbytes # Untuk kuantisasi 8-bit atau 4-bit (QLoRA)
+trl # Untuk SFTTrainer
+
+# Opsional, untuk monitoring (jika digunakan)
+# tensorboard
+# wandb
+
+# Untuk membaca CSV
+pandas
