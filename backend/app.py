@@ -39,6 +39,44 @@ OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generat
 # Model LLM yang digunakan
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
+# ==============================================================================
+# DEFINISI PROMPT ENGINEERING UTAMA
+# ==============================================================================
+MAIN_SYSTEM_PROMPT = """Anda adalah Dishcovery, chatbot chef virtual ahli masakan Indonesia yang ramah dan membantu. 
+Tugas Anda adalah memberikan rekomendasi resep yang lezat, mudah diikuti, dan sesuai dengan bahan serta preferensi pengguna.
+
+Instruksi Umum:
+1. Selalu sapa pengguna dengan ramah di awal percakapan jika ini adalah interaksi pertama atau pertanyaan baru.
+2. Berikan jawaban dalam Bahasa Indonesia yang baik dan natural.
+3. Jika Anda menggunakan informasi resep yang saya berikan di bawah (dari database kami), sebutkan bahwa Anda merekomendasikan resep berdasarkan itu.
+4. Jika pengguna meminta sesuatu di luar konteks memasak atau resep, tolak dengan sopan.
+5. Jika Anda tidak yakin atau tidak bisa memenuhi permintaan dengan informasi yang ada, katakan terus terang dan tawarkan alternatif jika memungkinkan.
+
+Format Output untuk Resep (JIKA ANDA MEMBERIKAN DETAIL RESEP LENGKAP):
+Harap ikuti format ini dengan ketat jika Anda menyajikan resep secara penuh:
+---
+**Judul Resep:** [Nama Resep Jelas dan Menarik]
+**Porsi:** [Untuk berapa orang, misal: 2-3 orang]
+**Waktu Persiapan:** [Estimasi waktu, misal: 15 menit]
+**Waktu Memasak:** [Estimasi waktu, misal: 30 menit]
+
+**Bahan-bahan:**
+- [Jumlah] [Satuan] [Nama Bahan 1]
+- [Jumlah] [Satuan] [Nama Bahan 2]
+- ...
+
+**Langkah-langkah:**
+1. [Langkah detail pertama]
+2. [Langkah detail kedua]
+3. ...
+
+**Tips Tambahan (Opsional):**
+- [Tips 1]
+- [Tips 2]
+---
+"""
+# ==============================================================================
+
 # Daftar kategori diet dan nutrisi
 DIET_CATEGORIES = {
     "vegan": ["daging", "ayam", "sapi", "ikan", "udang", "telur", "susu", "keju", "mentega", "yogurt"],
@@ -248,40 +286,63 @@ def retrieve_recipes(user_input, preferences=None, top_n=5):
     return top_recipes, filter_info
 
 # Fungsi untuk mengirim prompt ke Ollama
-async def query_ollama(user_message, system_prompt):
-    """Mengirim prompt ke Ollama LLM dan mendapatkan respons."""
+async def query_ollama(user_message: str, retrieved_recipes_context: str, filter_info_context: str):
+    """Mengirim prompt ke Ollama LLM dan mendapatkan respons, dengan konteks RAG."""
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            # Format prompt untuk Ollama
-            prompt = f"""
-            {system_prompt}
+        # Gabungkan prompt dasar dengan konteks yang diambil dan pertanyaan pengguna
+        prompt_parts = [MAIN_SYSTEM_PROMPT]
 
-            Pertanyaan pengguna: {user_message}
-            
-            Berikan jawaban yang natural dan informatif. Jika pengguna menanyakan resep dengan bahan tertentu, berikan rekomendasi resep yang sesuai dengan bahan tersebut. Jika pengguna menyebutkan preferensi diet seperti vegan, vegetarian, non-dairy, gluten-free, rendah karbo, atau tinggi protein, pastikan resep yang direkomendasikan sesuai dengan preferensi tersebut.
-            """
-            
-            # Kirim request ke Ollama API
+        if filter_info_context:
+            prompt_parts.append(f"\nFilter preferensi yang diterapkan pada pencarian internal kami:\n{filter_info_context}")
+
+        if retrieved_recipes_context:
+            prompt_parts.append(f"\nBerikut adalah beberapa resep dari database kami yang mungkin relevan dengan permintaan Anda:\n{retrieved_recipes_context}")
+        else:
+            prompt_parts.append("\nSayangnya, saya tidak menemukan resep yang sangat cocok di database kami berdasarkan permintaan spesifik Anda. Namun, saya akan mencoba membantu Anda berdasarkan pengetahuan umum saya.")
+
+        # Bagian untuk interaksi pengguna
+        prompt_parts.append(f"\n---\nPertanyaan Pengguna: \"{user_message}\"\n---\n")
+
+        # Instruksi akhir untuk LLM berdasarkan konteks
+        if retrieved_recipes_context:
+            prompt_parts.append("Berdasarkan informasi resep di atas dan pertanyaan pengguna, berikan jawaban atau resep yang paling sesuai. Jika Anda menyajikan resep secara penuh, harap gunakan format output yang telah ditentukan.")
+        else:
+            prompt_parts.append("Berdasarkan pertanyaan pengguna, berikan jawaban, saran, atau resep umum yang mungkin membantu. Jika Anda menyajikan resep secara penuh, harap gunakan format output yang telah ditentukan.")
+
+        prompt_parts.append("\nJawaban Anda (Chef Dishcovery):")
+
+        final_prompt = "\n".join(prompt_parts)
+
+        logger.info(f"Final prompt for LLM (length: {len(final_prompt)} chars):\n{final_prompt[:1000]}...") # Log sebagian prompt
+
+        async with httpx.AsyncClient(timeout=90.0) as client: # Timeout dinaikkan sedikit
             response = await client.post(
                 OLLAMA_API_URL,
                 json={
                     "model": OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False
+                    "prompt": final_prompt,
+                    "stream": False,
+                    # "system": MAIN_SYSTEM_PROMPT # Alternatif: beberapa API Ollama mengizinkan 'system' terpisah
+                                                 # Jika endpoint /api/generate, biasanya system prompt jadi bagian dari prompt utama.
+                                                 # Jika /api/chat, bisa dipisah. Kita gabung dulu di sini.
+                    # "options": {"num_ctx": 4096} # Jika perlu menaikkan context window, sesuaikan dengan kemampuan model & Ollama
                 }
             )
-            
-            if response.status_code != 200:
-                logger.error(f"Error dari Ollama API: {response.text}")
-                return "Maaf, ada masalah dengan layanan LLM. Silakan coba lagi nanti."
-            
-            # Proses respons dari Ollama
+
+            response.raise_for_status() # Ini akan raise error jika status code 4xx atau 5xx
+
             result = response.json()
-            return result.get("response", "Tidak ada respons dari model.")
-            
+            return result.get("response", "Maaf, saya tidak mendapatkan respons yang valid dari Chef Dishcovery saat ini.").strip()
+
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP Error dari Ollama API: {e.response.status_code} - {e.response.text}")
+        return f"Maaf, ada masalah saat menghubungi layanan Chef Dishcovery (HTTP {e.response.status_code}). Silakan coba lagi nanti."
+    except httpx.RequestError as e:
+        logger.error(f"Error koneksi saat mengakses Ollama: {e}")
+        return "Maaf, saya tidak dapat terhubung ke layanan Chef Dishcovery saat ini. Periksa koneksi Anda atau coba lagi nanti."
     except Exception as e:
-        logger.error(f"Error saat mengakses Ollama: {e}")
-        return "Maaf, ada masalah teknis saat berkomunikasi dengan layanan LLM."
+        logger.error(f"Error tidak terduga saat query Ollama: {e}", exc_info=True)
+        return "Maaf, ada sedikit kendala teknis di dapur kami. Silakan coba beberapa saat lagi."
 
 @app.get("/")
 async def root():
@@ -301,61 +362,43 @@ async def chat(request: ChatRequest):
     """API endpoint untuk chat dengan LLM dengan dukungan RAG dan preferensi diet."""
     user_message = request.message
     user_preferences = request.preferences or {}
-    
+
     if not user_message:
         raise HTTPException(status_code=400, detail="Pesan tidak boleh kosong")
-    
+
     logger.info(f"Menerima pesan: {user_message}")
     logger.info(f"Preferensi user: {user_preferences}")
-    
-    # Gunakan RAG untuk mencari resep yang relevan
-    hasil_resep, filter_info = retrieve_recipes(user_message, user_preferences)
-    
-    # Siapkan system prompt dengan konteks RAG
-    system_prompt = """
-    Perkenalkan, aku Dishcovery, chatbot rekomendasi makanan Indonesia yang membantu pengguna menemukan resep berdasarkan bahan-bahan yang mereka miliki dan preferensi diet mereka.
-    Berikan jawaban yang natural, informatif, dan dalam Bahasa Indonesia.
 
-    Tips untuk menjawab:
-    1. Jika pengguna menanyakan resep dengan bahan tertentu, berikan 1-3 rekomendasi resep yang sesuai.
-    2. Berikan nama resep, bahan-bahan yang diperlukan, dan cara membuatnya secara singkat.
-    3. Jika ada bahan yang tidak disebutkan pengguna tapi dibutuhkan dalam resep, sebutkan juga.
-    4. Jika pengguna memiliki preferensi diet (vegan, vegetarian, non-dairy, dll), pastikan resep yang kamu rekomendasikan sesuai.
-    5. Berikan juga informasi nutrisi dari resep jika tersedia.
-    6. Jika tidak ada resep yang cocok, sarankan resep sederhana yang bisa dibuat dengan bahan-bahan serupa.
-    """
-    
-    # Tambahkan informasi filter jika ada
-    if filter_info:
-        system_prompt += f"\n\n{filter_info}\n"
-    
-    # Tambahkan hasil pencarian resep ke system prompt jika ada
-    if hasil_resep:
-        system_prompt += "\n\nBerikut adalah beberapa resep yang cocok dengan input pengguna dan preferensinya:\n"
-        for i, resep in enumerate(hasil_resep, 1):
-            system_prompt += f"\nResep {i}: {resep['nama']}\n"
-            system_prompt += f"Bahan: {resep['bahan']}\n"
-            system_prompt += f"Cara membuat: {resep['langkah']}\n"
-            
-            # Tambahkan informasi nutrisi
-            system_prompt += f"Estimasi Nutrisi: {resep['nutrisi']['kalori']} kkal, "
-            system_prompt += f"Protein: {resep['nutrisi']['protein']}g, "
-            system_prompt += f"Karbohidrat: {resep['nutrisi']['karbohidrat']}g, "
-            system_prompt += f"Lemak: {resep['nutrisi']['lemak']}g\n"
-            
-            # Tambahkan kategori diet
-            if resep['kategori_diet']:
-                system_prompt += f"Kategori Diet: {', '.join(resep['kategori_diet'])}\n"
+    # 1. Gunakan RAG untuk mencari resep yang relevan
+    hasil_resep_list, filter_info_text = retrieve_recipes(user_message, user_preferences, top_n=3) # Ambil top 3 saja untuk konteks
+
+    # 2. Format hasil RAG menjadi konteks teks untuk LLM
+    retrieved_recipes_context_text = ""
+    if hasil_resep_list:
+        for i, resep in enumerate(hasil_resep_list, 1):
+            retrieved_recipes_context_text += f"\nResep {i}: {resep['nama']}\n"
+            retrieved_recipes_context_text += f"Bahan: {resep['bahan']}\n"
+            retrieved_recipes_context_text += f"Cara membuat: {resep['langkah']}\n"
+            if resep.get('nutrisi'):
+                retrieved_recipes_context_text += f"Estimasi Nutrisi: {resep['nutrisi']['kalori']} kkal, Protein: {resep['nutrisi']['protein']}g, Karbo: {resep['nutrisi']['karbohidrat']}g, Lemak: {resep['nutrisi']['lemak']}g\n"
+            if resep.get('kategori_diet'):
+                retrieved_recipes_context_text += f"Kategori Diet: {', '.join(resep['kategori_diet'])}\n"
     else:
-        # Jika tidak ada hasil spesifik, tambahkan konteks umum
-        system_prompt += "\n" + prepare_context()
-    
-    # Kirim ke LLM dan dapatkan respons
-    llm_response = await query_ollama(user_message, system_prompt)
-    
+        # Jika RAG tidak menemukan apa pun, kita bisa memberikan konteks umum dari dataset
+        # atau biarkan kosong agar LLM menjawab berdasarkan pengetahuan umumnya.
+        # Untuk sekarang, biarkan kosong jika RAG tidak menemukan apa-apa,
+        # dan biarkan logika di query_ollama yang menanganinya.
+        pass 
+        # Anda bisa uncomment ini jika ingin selalu ada konteks, bahkan jika RAG kosong:
+        # retrieved_recipes_context_text = prepare_context(max_samples=1) # Ambil 1 sampel acak jika RAG kosong
+
+    # 3. Kirim ke LLM dan dapatkan respons
+    llm_response = await query_ollama(user_message, retrieved_recipes_context_text, filter_info_text)
+
     return JSONResponse(content={
         "response": llm_response,
-        "resep_ditemukan": len(hasil_resep),
+        "resep_ditemukan_rag": len(hasil_resep_list),
+        "info_filter_rag": filter_info_text.strip(),
         "preferensi_diterapkan": user_preferences
     })
 
