@@ -18,7 +18,8 @@ BASE_MODEL_ID = "NousResearch/Meta-Llama-3-8B-Instruct" # Atau model Llama 3 lai
 # atau men-download versi Hugging Face-nya langsung.
 # Atau gunakan model yang lebih kecil jika VRAM terbatas, misal: "unsloth/llama-3-8b-Instruct-bnb-4bit" jika menggunakan Unsloth
 
-PROCESSED_DATASET_PATH = os.path.join("data_output", "resep_dataset_formatted")
+PROCESSED_DATASET_PATH = os.path.join("data_output", "resep_dataset_formatted_llama3_instruct")
+print(f"DEBUG: PROCESSED_DATASET_PATH diatur ke: {PROCESSED_DATASET_PATH}") # TAMBAHKAN BARIS INI
 OUTPUT_DIR = "./results_llama3_resep_finetuned" # Direktori untuk menyimpan model adapter dan output training
 
 # QLoRA parameters
@@ -120,7 +121,7 @@ def main():
     # Cara terbaik adalah dengan print(model) dan lihat nama layer Linear
     # Atau gunakan fungsi helper jika ada (misal dari Unsloth)
     # Untuk Llama 3 biasanya:
-    target_modules_llama3 = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    target_modules_llama3 = ["q_proj", "v_proj"]
     
     peft_config = LoraConfig(
         lora_alpha=LORA_ALPHA,
@@ -133,30 +134,37 @@ def main():
     # model = get_peft_model(model, peft_config) # SFTTrainer bisa menghandle ini juga
 
     # 5. Konfigurasi Training Arguments
-    training_arguments = TrainingArguments(
-        output_dir=OUTPUT_DIR,
-        num_train_epochs=NUM_TRAIN_EPOCHS,
-        per_device_train_batch_size=PER_DEVICE_TRAIN_BATCH_SIZE,
-        gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
-        optim=OPTIM_FUNC,
-        save_steps=SAVE_STEPS,
-        logging_steps=LOGGING_STEPS,
-        learning_rate=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
-        fp16=FP16_BF16 is False, # Aktifkan fp16 jika bf16 tidak aktif
-        bf16=FP16_BF16,         # Aktifkan bf16 jika didukung
-        max_grad_norm=MAX_GRAD_NORM,
-        max_steps=MAX_STEPS,
-        warmup_ratio=WARMUP_RATIO,
-        group_by_length=GROUP_BY_LENGTH,
-        lr_scheduler_type=LR_SCHEDULER_TYPE,
-        report_to="tensorboard", # Atau "wandb" jika Anda setup
-        evaluation_strategy="steps" if eval_dataset else "no",
-        eval_steps=SAVE_STEPS if eval_dataset else None, # Evaluasi setiap save_steps
-        # load_best_model_at_end=True if eval_dataset else False, # Untuk memuat model terbaik di akhir
-        # metric_for_best_model="eval_loss" if eval_dataset else None,
-        # greater_is_better=False if eval_dataset else None,
-    )
+    base_training_args = {
+        "output_dir": OUTPUT_DIR,
+        "num_train_epochs": NUM_TRAIN_EPOCHS,
+        "per_device_train_batch_size": PER_DEVICE_TRAIN_BATCH_SIZE,
+        "gradient_accumulation_steps": GRADIENT_ACCUMULATION_STEPS,
+        "optim": OPTIM_FUNC,
+        "save_steps": SAVE_STEPS,
+        "logging_steps": LOGGING_STEPS,
+        "learning_rate": LEARNING_RATE,
+        "weight_decay": WEIGHT_DECAY,
+        "fp16": FP16_BF16 is False,
+        "bf16": FP16_BF16,
+        "max_grad_norm": MAX_GRAD_NORM,
+        "max_steps": MAX_STEPS,
+        "warmup_ratio": WARMUP_RATIO,
+        "group_by_length": GROUP_BY_LENGTH,
+        "lr_scheduler_type": LR_SCHEDULER_TYPE,
+        "report_to": "tensorboard",
+    }
+
+    if eval_dataset is not None:
+        print("INFO: eval_dataset ditemukan, menambahkan argumen evaluasi.")
+        base_training_args["evaluation_strategy"] = "steps"
+        base_training_args["eval_steps"] = SAVE_STEPS
+        # Jika Anda ingin mengaktifkan fitur ini nanti dan yakin didukung:
+        # base_training_args["load_best_model_at_end"] = True
+        # base_training_args["metric_for_best_model"] = "eval_loss"
+    else:
+        print("INFO: eval_dataset tidak ditemukan, tidak ada argumen evaluasi eksplisit yang ditambahkan.")
+
+    training_arguments = TrainingArguments(**base_training_args)
 
     # 6. Inisialisasi SFTTrainer
     print("Menginisialisasi SFTTrainer...")
@@ -166,10 +174,10 @@ def main():
         eval_dataset=eval_dataset,
         peft_config=peft_config, # Berikan config PEFT di sini
         dataset_text_field="text", # Nama kolom di dataset Anda yang berisi teks input
-        max_seq_length=MAX_SEQ_LENGTH,
-        tokenizer=tokenizer,
-        args=training_arguments,
-        packing=PACKING,
+        # max_seq_length=MAX_SEQ_LENGTH,
+        # tokenizer=tokenizer,
+        # args=training_arguments,
+        # packing=PACKING,
     )
 
     # Aktifkan gradient checkpointing secara manual jika perlu (SFTTrainer juga punya argumen)
