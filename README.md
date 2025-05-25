@@ -187,8 +187,11 @@ Contoh body:
 
 ## 👨‍💻 Kontributor
 
-- dipt4aaaa (owner)
-- Open to contributors! Silakan fork dan buat pull request.
+- dipt4aaaa
+- radifan
+- pasya
+- juju
+- athmin
 
 ---
 
