@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
       - name: dishcovery-backend
-        image: dishcovery-backend:latest      # ✅ gunakan image lokal
-        imagePullPolicy: Never                # ✅ jangan tarik dari Docker Hub
+        image: dishcovery-backend:latest      
+        imagePullPolicy: Never            
         ports:
         - containerPort: 8000
 ---
