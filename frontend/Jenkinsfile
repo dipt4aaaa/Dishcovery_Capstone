@@ -24,20 +24,20 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Test') {
             steps {
                 dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
-                    sh 'npm test' // Jika ada test
-                    sh 'docker-compose build frontend'
+                    sh 'docker run --rm -v $(pwd):/files validator/validator:latest ./index.html'
                 }
             }
         }
-
-        stage('Deploy') {
+         stage('Deploy Static Files') {
             steps {
-                sh 'docker-compose up -d --no-deps frontend'
+                sh '''
+                cd frontend
+                docker-compose build frontend
+                docker-compose up -d --no-deps frontend
+                '''
             }
         }
     }
