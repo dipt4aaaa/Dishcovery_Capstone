@@ -15,7 +15,7 @@ pipeline {
             steps {
                 checkout([
                     $class: 'GitSCM',
-                    branches: [[name: '*/main']],
+                    branches: [[name: '*/dev-novan']],
                     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'frontend']],
                     // userRemoteConfigs: [[
                     //     url: 'git@github.com:your-username/your-repo.git',
