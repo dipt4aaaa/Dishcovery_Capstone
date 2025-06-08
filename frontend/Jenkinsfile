@@ -17,10 +17,9 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/dev-novan']],
                     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'frontend']],
-                    // userRemoteConfigs: [[
-                    //     url: 'git@github.com:your-username/your-repo.git',
-                    //     credentialsId: 'github-ssh-key'
-                    // ]]
+                     userRemoteConfigs: [[
+                        url: 'https://github.com/dipt4aaaa/Dishcovery_Capstone.git'
+                    ]]
                 ])
             }
         }
