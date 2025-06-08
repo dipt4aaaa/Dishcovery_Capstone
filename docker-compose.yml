@@ -8,20 +8,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    # Konfigurasi untuk menggunakan GPU NVIDIA
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    # Atau bisa menggunakan runtime (untuk Docker Compose versi lama)
-    # runtime: nvidia
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    # Pastikan model diunduh saat container dimulai
+  
     entrypoint: >
       sh -c "ollama serve &
              sleep 10 &&

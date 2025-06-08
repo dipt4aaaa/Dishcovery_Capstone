@@ -1,0 +1,57 @@
+pipeline {
+    agent any
+
+    triggers {
+        githubPush()
+    }
+
+    environment {
+        DOCKER_HOST = 'unix:///var/run/docker.sock'
+        FRONTEND_DIR = '/var/jenkins_home/workspace/frontend'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'frontend']],
+                    // userRemoteConfigs: [[
+                    //     url: 'git@github.com:your-username/your-repo.git',
+                    //     credentialsId: 'github-ssh-key'
+                    // ]]
+                ])
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                dir('frontend') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                    sh 'npm test' // Jika ada test
+                    sh 'docker-compose build frontend'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker-compose up -d --no-deps frontend'
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            slackSend(color: 'good', message: "Frontend deployed: ${env.BUILD_URL}")
+        }
+        failure {
+            slackSend(color: 'danger', message: "Deployment failed: ${env.BUILD_URL}")
+        }
+    }
+}
