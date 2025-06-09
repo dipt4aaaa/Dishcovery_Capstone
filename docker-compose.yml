@@ -8,7 +8,20 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-  
+    # Konfigurasi untuk menggunakan GPU NVIDIA
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    # # Atau bisa menggunakan runtime (untuk Docker Compose versi lama)
+    # # runtime: nvidia
+    # environment:
+    #   - NVIDIA_VISIBLE_DEVICES=all
+    #   - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    # Pastikan model diunduh saat container dimulai
     entrypoint: >
       sh -c "ollama serve &
              sleep 10 &&
@@ -22,7 +35,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - OLLAMA_API_URL=http://ollama:11434/api/generate
+      - OLLAMA_API_URL=http://localhost:11434/api/generate
       - OLLAMA_MODEL=llama3
       - PORT=8000
     volumes:
@@ -42,5 +55,26 @@ services:
       - backend
     restart: unless-stopped
 
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    user: root
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./jenkins/scripts:/var/jenkins_scripts
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - JENKINS_OPTS=--httpPort=8080 --httpListenAddress=0.0.0.0
+    depends_on:
+      - frontend
+    restart: unless-stopped
+    networks:
+      - default
 volumes:
   ollama_data:
+  jenkins_data:
+
+#ubuntu@ec2-52-71-206-133.compute-1.amazonaws.com
