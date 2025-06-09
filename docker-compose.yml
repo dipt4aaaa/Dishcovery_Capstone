@@ -8,24 +8,28 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
-    # Konfigurasi untuk menggunakan GPU NVIDIA
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
-    # # Atau bisa menggunakan runtime (untuk Docker Compose versi lama)
-    # # runtime: nvidia
-    # environment:
-    #   - NVIDIA_VISIBLE_DEVICES=all
-    #   - NVIDIA_DRIVER_CAPABILITIES=compute,utility
-    # Pastikan model diunduh saat container dimulai
+    
+    # CPU optimizations
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'  # Adjust based on your CPU cores
+          memory: 8G   # Increase if you have more RAM
+    
+    environment:
+      # CPU optimization settings
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_FLASH_ATTENTION=false
+      - OLLAMA_LLM_LIBRARY=cpu
+      - OMP_NUM_THREADS=4  # Adjust to your CPU cores
+      
+    # Use a smaller, faster model for CPU inference
     entrypoint: >
       sh -c "ollama serve &
              sleep 10 &&
-             ollama pull llama3 &&
+             ollama pull llama3.2:1b &&
+             ollama pull phi3:mini &&
              wait"
 
   backend:
@@ -35,9 +39,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-  #    - OLLAMA_API_URL=http://localhost:11434/api/generate
-      - OLLAMA_MODEL=llama3
+     # - OLLAMA_API_URL=http://ollama:11434/api/generate
+      - OLLAMA_MODEL=llama3.2:1b  # Smaller model for faster inference
       - PORT=8000
+      # Backend optimizations
+      - REQUEST_TIMEOUT=3000  # 5 minutes timeout
+      - MAX_TOKENS=512       # Limit response length
     volumes:
       - ./backend:/app
       - ./data:/app/data
@@ -71,10 +78,12 @@ services:
     depends_on:
       - frontend
     restart: unless-stopped
-    networks:
-      - default
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 2G
+
 volumes:
   ollama_data:
   jenkins_data:
-
-#ubuntu@ec2-52-71-206-133.compute-1.amazonaws.com
