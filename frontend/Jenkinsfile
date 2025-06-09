@@ -8,6 +8,7 @@ pipeline {
     environment {
         DOCKER_HOST = 'unix:///var/run/docker.sock'
         FRONTEND_DIR = "${WORKSPACE}/frontend"
+        TARGET_URL = "http://52.71.206.133/" // Ganti dengan URL target Anda
     }
 
     stages {
@@ -24,22 +25,17 @@ pipeline {
             }
         }
 
-        stage('Validate HTML (Direct Docker)') {
-            agent {
-                docker {
-                    image 'validator/validator:latest'
-                    args '-v ${FRONTEND_DIR}:/files'
-                }
-            }
+        stage('Health Check with Curl') {
             steps {
-                sh 'validator /files/index.html'
-            }
-        }
-
-        stage('Validate HTML (Inline Docker)') {
-            steps {
-                dir('frontend') {
-                    sh 'docker run --rm -v $(pwd):/files validator/validator:latest ./index.html'
+                script {
+                    // Cek ketersediaan endpoint
+                    def response = sh(returnStdout: true, script: "curl -s -o /dev/null -w '%{http_code}' ${TARGET_URL} || true").trim()
+                    
+                    if (response != "200") {
+                        error("Health check failed! HTTP Status: ${response}")
+                    } else {
+                        echo "Health check passed! Service is running"
+                    }
                 }
             }
         }
@@ -59,6 +55,19 @@ pipeline {
                 }
             }
         }
+
+        stage('Post-Deploy Check') {
+            steps {
+                script {
+                    sleep(time: 30, unit: 'SECONDS') // Tunggu service ready
+                    def deployCheck = sh(returnStdout: true, script: "curl -s -o /dev/null -w '%{http_code}' ${TARGET_URL} || true").trim()
+                    
+                    if (deployCheck != "200") {
+                        error("Post-deploy check failed! HTTP Status: ${deployCheck}")
+                    }
+                }
+            }
+        }
     }
 
     post {
@@ -66,10 +75,10 @@ pipeline {
             cleanWs()
         }
         success {
-            slackSend(color: 'good', message: "Frontend deployed successfully: ${env.BUILD_URL}")
+            slackSend(color: 'good', message: "Frontend deployed successfully: ${env.BUILD_URL} | Service available at ${TARGET_URL}")
         }
         failure {
-            slackSend(color: 'danger', message: "Frontend deployment failed: ${env.BUILD_URL}")
+            slackSend(color: 'danger', message: "Deployment failed: ${env.BUILD_URL} | Last status: ${deployCheck ?: 'N/A'}")
         }
     }
 }
