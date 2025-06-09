@@ -48,10 +48,18 @@ pipeline {
             }
         }
 
-        stage('Deploy Frontend') {
+      stage('Deploy Frontend') {
             steps {
                 dir('frontend') {
-                    sh 'docker-compose up -d --no-deps frontend'
+                    sh '''
+                    # Stop existing container if running
+                    docker-compose stop frontend || true
+                    docker-compose rm -f frontend || true
+                    
+                    # Build and start fresh
+                    docker-compose build frontend
+                    docker-compose up -d --no-deps frontend
+                    '''
                 }
             }
         }
