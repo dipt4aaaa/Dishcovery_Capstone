@@ -72,9 +72,12 @@ services:
       - jenkins_data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
       - ./jenkins/scripts:/var/jenkins_scripts
+      - /usr/bin/docker:/usr/bin/docker:ro
+      - /usr/lib/x86_64-linux-gnu/libltdl.so.7:/usr/lib/x86_64-linux-gnu/libltdl.so.7:ro
     environment:
       - DOCKER_HOST=unix:///var/run/docker.sock
       - JENKINS_OPTS=--httpPort=8080 --httpListenAddress=0.0.0.0
+      - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     depends_on:
       - frontend
     restart: unless-stopped
@@ -83,6 +86,15 @@ services:
         limits:
           cpus: '0.2'
           memory: 2G
+    entrypoint: >
+      sh -c "
+        apt-get update && 
+        apt-get install -y curl &&
+        curl -fsSL https://get.docker.com -o get-docker.sh &&
+        sh get-docker.sh &&
+        usermod -aG docker jenkins &&
+        /usr/local/bin/jenkins.sh
+      "
 
 volumes:
   ollama_data:
