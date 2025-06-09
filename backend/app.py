@@ -61,7 +61,7 @@ class ChatRequest(BaseModel):
     preferences: Optional[Dict[str, bool]] = None
 
 # URL Ollama API, sesuaikan dengan konfigurasi Anda
-OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434/api/generate")
+OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://52.71.206.133:11434/api/generate")
 # Model LLM yang digunakan
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
 
