@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         DOCKER_HOST = 'unix:///var/run/docker.sock'
-        FRONTEND_DIR = '/var/jenkins_home/workspace/frontend'
+        FRONTEND_DIR = "${WORKSPACE}/frontend"
     }
 
     stages {
@@ -17,27 +17,46 @@ pipeline {
                     $class: 'GitSCM',
                     branches: [[name: '*/dev-novan']],
                     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'frontend']],
-                     userRemoteConfigs: [[
-                        url: 'https://github.com/dipt4aaaa/Dishcovery_Capstone.git'
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/dipt4aaaa/Dishcovery_Capstone.git',
                     ]]
                 ])
             }
         }
 
-        stage('Test') {
+        stage('Validate HTML (Direct Docker)') {
+            agent {
+                docker {
+                    image 'validator/validator:latest'
+                    args '-v ${FRONTEND_DIR}:/files'
+                }
+            }
+            steps {
+                sh 'validator /files/index.html'
+            }
+        }
+
+        stage('Validate HTML (Inline Docker)') {
             steps {
                 dir('frontend') {
                     sh 'docker run --rm -v $(pwd):/files validator/validator:latest ./index.html'
                 }
             }
         }
-         stage('Deploy Static Files') {
+
+        stage('Build Frontend') {
             steps {
-                sh '''
-                cd frontend
-                docker-compose build frontend
-                docker-compose up -d --no-deps frontend
-                '''
+                dir('frontend') {
+                    sh 'docker-compose build frontend'
+                }
+            }
+        }
+
+        stage('Deploy Frontend') {
+            steps {
+                dir('frontend') {
+                    sh 'docker-compose up -d --no-deps frontend'
+                }
             }
         }
     }
@@ -47,10 +66,10 @@ pipeline {
             cleanWs()
         }
         success {
-            slackSend(color: 'good', message: "Frontend deployed: ${env.BUILD_URL}")
+            slackSend(color: 'good', message: "Frontend deployed successfully: ${env.BUILD_URL}")
         }
         failure {
-            slackSend(color: 'danger', message: "Deployment failed: ${env.BUILD_URL}")
+            slackSend(color: 'danger', message: "Frontend deployment failed: ${env.BUILD_URL}")
         }
     }
 }
