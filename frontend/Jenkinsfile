@@ -20,7 +20,7 @@ pipeline {
                     branches: [[name: '*/dev-novan']],
                     extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'frontend']],
                     userRemoteConfigs: [[
-                        url: 'https://github.com/dipt4aaaa/Dishcovery_Capstone.git',
+                        url: 'https://github.com/dipt4aaaa/Dishcovery_Capstone.git'
                     ]]
                 ])
             }
@@ -29,22 +29,16 @@ pipeline {
         stage('Pre-Deploy Health Check') {
             steps {
                 script {
-                    try {
-                        def response = sh(
-                            returnStdout: true, 
-                            script: "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 ${TARGET_URL} || echo '000'"
-                        ).trim()
-                        
-                        echo "Current service status: HTTP ${response}"
-                        
-                        if (response == "200") {
-                            echo "Service is currently running and healthy"
-                        } else {
-                            echo "Service is not responding or unhealthy (Status: ${response})"
-                        }
-                    } catch (Exception e) {
-                        echo "Pre-deploy health check failed: ${e.getMessage()}"
-                        echo "Continuing with deployment..."
+                    def response = sh(
+                        returnStdout: true, 
+                        script: "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 ${TARGET_URL} || echo '000'"
+                    ).trim()
+
+                    echo "Current service status: HTTP ${response}"
+                    if (response == "200") {
+                        echo "Service is currently running and healthy"
+                    } else {
+                        echo "Service is not responding or unhealthy (Status: ${response})"
                     }
                 }
             }
@@ -52,46 +46,37 @@ pipeline {
 
         stage('Stop Conflicting Containers') {
             steps {
-                script {
-                    try {
-                        sh '''
-                        echo "Checking for containers using port 80..."
-                        
-                        # Stop any container using port 80
-                        CONTAINERS_ON_PORT_80=$(docker ps --filter "publish=80" -q)
-                        if [ ! -z "$CONTAINERS_ON_PORT_80" ]; then
-                            echo "Found containers using port 80, stopping them..."
-                            docker stop $CONTAINERS_ON_PORT_80 || true
-                            docker rm $CONTAINERS_ON_PORT_80 || true
-                        fi
-                        
-                        # Stop specific known containers
-                        docker stop dishcovery_capstone_frontend_1 || true
-                        docker rm dishcovery_capstone_frontend_1 || true
-                        
-                        echo "Port 80 cleanup completed"
-                        '''
-                    } catch (Exception e) {
-                        echo "Container cleanup warning: ${e.getMessage()}"
-                    }
-                }
+                sh '''
+                echo "Checking for containers using port 80..."
+
+                CONTAINERS_ON_PORT_80=$(docker ps --filter "publish=80" -q)
+                if [ ! -z "$CONTAINERS_ON_PORT_80" ]; then
+                    echo "Found containers using port 80, stopping them..."
+                    docker stop $CONTAINERS_ON_PORT_80 || true
+                    docker rm $CONTAINERS_ON_PORT_80 || true
+                fi
+
+                docker stop dishcovery_capstone_frontend_1 || true
+                docker rm dishcovery_capstone_frontend_1 || true
+
+                echo "Port 80 cleanup completed"
+                '''
             }
         }
 
-           stage('Build Frontend') {
+        stage('Build Frontend') {
             steps {
                 dir('frontend') {
                     script {
-                        try {
-                            sh '''
+                        def buildStatus = sh(returnStatus: true, script: '''
                             echo "Building frontend image..."
                             docker-compose build --no-cache frontend
-                            
+
                             echo "Verifying built image..."
-                            docker images | grep frontend || echo "No frontend images found"
-                            '''
-                        } catch (Exception e) {
-                            error("Frontend build failed: ${e.getMessage()}")
+                            docker images | grep frontend || exit 1
+                        ''')
+                        if (buildStatus != 0) {
+                            error("Frontend build failed")
                         }
                     }
                 }
@@ -102,56 +87,35 @@ pipeline {
             steps {
                 dir('frontend') {
                     script {
-                        try {
-                            sh '''
+                        def deployStatus = sh(returnStatus: true, script: '''
                             echo "Starting frontend deployment..."
-                            
-                            # Ensure clean state
+
                             docker-compose stop frontend || true
                             docker-compose rm -f frontend || true
-                            
-                            # Wait a moment for port to be released
+
                             sleep 5
-                            
-                            # Deploy with explicit project name to avoid conflicts
-                            echo "Starting frontend container..."
+
                             docker-compose up -d --no-deps frontend
-                            
-                            # Verify container started
+
                             sleep 10
-                            if docker-compose ps frontend | grep -q "Up"; then
-                                echo "Frontend container started successfully"
-                            else
-                                echo "Frontend container status:"
-                                docker-compose ps frontend
-                                docker-compose logs frontend
-                                exit 1
-                            fi
+                            docker-compose ps frontend | grep -q "Up"
+                        ''')
+
+                        if (deployStatus == 0) {
+                            DEPLOY_STATUS = "SUCCESS"
+                            echo "Frontend container started successfully"
+                        } else {
+                            DEPLOY_STATUS = "FAILED"
+                            echo "Frontend deployment failed, collecting logs..."
+
+                            sh '''
+                            echo "=== DEPLOYMENT FAILURE DEBUG ==="
+                            docker ps -a
+                            docker-compose ps
+                            docker-compose logs frontend || true
+                            ss -tlnp | grep :80 || true
                             '''
-                            
-                            env.DEPLOY_STATUS = "SUCCESS"
-                            
-                        } catch (Exception e) {
-                            env.DEPLOY_STATUS = "FAILED"
-                            
-                            // Capture logs for debugging
-                            try {
-                                sh '''
-                                echo "=== DEPLOYMENT FAILURE DEBUG ==="
-                                echo "Docker containers:"
-                                docker ps -a
-                                echo "Docker-compose status:"
-                                docker-compose ps
-                                echo "Frontend logs:"
-                                docker-compose logs frontend || true
-                                echo "Port 80 usage:"
-                                netstat -tlnp | grep :80 || true
-                                '''
-                            } catch (Exception logError) {
-                                echo "Failed to capture debug logs: ${logError.getMessage()}"
-                            }
-                            
-                            error("Frontend deployment failed: ${e.getMessage()}")
+                            error("Frontend deployment failed")
                         }
                     }
                 }
@@ -161,53 +125,37 @@ pipeline {
         stage('Post-Deploy Verification') {
             steps {
                 script {
-                    try {
-                        echo "Waiting for service to be ready..."
-                        sleep(time: 30, unit: 'SECONDS')
-                        
-                        // Multiple attempts to check service
-                        def maxAttempts = 5
-                        def attempt = 1
-                        def deployCheck = ""
-                        
-                        while (attempt <= maxAttempts) {
-                            deployCheck = sh(
-                                returnStdout: true, 
-                                script: "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 ${TARGET_URL} || echo '000'"
-                            ).trim()
-                            
-                            echo "Attempt ${attempt}/${maxAttempts}: HTTP Status ${deployCheck}"
-                            
-                            if (deployCheck == "200") {
-                                echo "✅ Post-deploy verification successful!"
-                                env.DEPLOY_STATUS = "VERIFIED"
-                                break
-                            }
-                            
-                            if (attempt < maxAttempts) {
-                                echo "Waiting 15 seconds before retry..."
-                                sleep(time: 15, unit: 'SECONDS')
-                            }
-                            
-                            attempt++
+                    echo "Waiting for service to be ready..."
+                    sleep 30
+
+                    def success = false
+                    for (int i = 1; i <= 5; i++) {
+                        def status = sh(
+                            returnStdout: true,
+                            script: "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 10 --max-time 30 ${TARGET_URL} || echo '000'"
+                        ).trim()
+
+                        echo "Attempt ${i}/5: HTTP Status ${status}"
+
+                        if (status == "200") {
+                            success = true
+                            DEPLOY_STATUS = "VERIFIED"
+                            break
                         }
-                        
-                        if (deployCheck != "200") {
-                            env.DEPLOY_STATUS = "UNVERIFIED"
-                            echo "⚠️ Warning: Service deployed but not responding correctly (Status: ${deployCheck})"
-                            
-                            // Don't fail the build, but log the issue
-                            sh '''
-                            echo "=== SERVICE HEALTH DEBUG ==="
-                            docker-compose ps frontend
-                            docker-compose logs --tail=50 frontend
-                            '''
+
+                        if (i < 5) {
+                            echo "Waiting 15 seconds before retry..."
+                            sleep 15
                         }
-                        
-                    } catch (Exception e) {
-                        env.DEPLOY_STATUS = "VERIFICATION_FAILED"
-                        echo "Post-deploy verification error: ${e.getMessage()}"
-                        // Don't fail the build for verification issues
+                    }
+
+                    if (!success) {
+                        DEPLOY_STATUS = "UNVERIFIED"
+                        echo "⚠️ Service not verified, capturing logs..."
+                        sh '''
+                        docker-compose ps frontend
+                        docker-compose logs --tail=50 frontend
+                        '''
                     }
                 }
             }
@@ -217,48 +165,39 @@ pipeline {
     post {
         always {
             script {
-                // Capture final status
-                try {
-                    sh '''
-                    echo "=== FINAL DEPLOYMENT STATUS ==="
-                    echo "Running containers:"
-                    docker ps | grep frontend || echo "No frontend containers running"
-                    echo "Port 80 status:"
-                    netstat -tlnp | grep :80 || echo "Port 80 not in use"
-                    '''
-                } catch (Exception e) {
-                    echo "Failed to capture final status: ${e.getMessage()}"
-                }
+                sh '''
+                echo "=== FINAL DEPLOYMENT STATUS ==="
+                docker ps | grep frontend || echo "No frontend containers running"
+                ss -tlnp | grep :80 || echo "Port 80 not in use"
+                '''
             }
             cleanWs()
         }
-        
+
         success {
             script {
                 def message = "✅ Frontend deployed successfully: ${env.BUILD_URL}"
-                if (env.DEPLOY_STATUS == "VERIFIED") {
+                if (DEPLOY_STATUS == "VERIFIED") {
                     message += " | ✅ Service verified at ${TARGET_URL}"
                 } else {
                     message += " | ⚠️ Service deployed but verification pending at ${TARGET_URL}"
                 }
-                
+
                 try {
                     slackSend(color: 'good', message: message)
-                } catch (Exception e) {
-                    echo "Slack notification failed: ${e.getMessage()}"
+                } catch (err) {
+                    echo "Slack notification failed: ${err.getMessage()}"
                 }
             }
         }
-        
+
         failure {
             script {
-                def status = env.DEPLOY_STATUS ?: 'UNKNOWN'
-                def message = "❌ Frontend deployment failed: ${env.BUILD_URL} | Status: ${status}"
-                
+                def message = "❌ Frontend deployment failed: ${env.BUILD_URL} | Status: ${DEPLOY_STATUS ?: 'UNKNOWN'}"
                 try {
                     slackSend(color: 'danger', message: message)
-                } catch (Exception e) {
-                    echo "Slack notification failed: ${e.getMessage()}"
+                } catch (err) {
+                    echo "Slack notification failed: ${err.getMessage()}"
                 }
             }
         }
