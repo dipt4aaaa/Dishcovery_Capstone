@@ -175,31 +175,23 @@ pipeline {
         }
 
         success {
-            script {
-                def message = "✅ Frontend deployed successfully: ${env.BUILD_URL}"
-                if (DEPLOY_STATUS == "VERIFIED") {
-                    message += " | ✅ Service verified at ${TARGET_URL}"
-                } else {
-                    message += " | ⚠️ Service deployed but verification pending at ${TARGET_URL}"
-                }
-
-                try {
-                    slackSend(color: 'good', message: message)
-                } catch (err) {
-                    echo "Slack notification failed: ${err.getMessage()}"
+                script {
+                    def message = "✅ Frontend deployed successfully: ${env.BUILD_URL}"
+                    if (DEPLOY_STATUS == "VERIFIED") {
+                        message += " | ✅ Service verified at ${TARGET_URL}"
+                    } else {
+                        message += " | ⚠️ Service deployed but verification pending at ${TARGET_URL}"
+                    }
+                    
+                    echo message
                 }
             }
-        }
 
-        failure {
-            script {
-                def message = "❌ Frontend deployment failed: ${env.BUILD_URL} | Status: ${DEPLOY_STATUS ?: 'UNKNOWN'}"
-                try {
-                    slackSend(color: 'danger', message: message)
-                } catch (err) {
-                    echo "Slack notification failed: ${err.getMessage()}"
+            failure {
+                script {
+                    def message = "❌ Frontend deployment failed: ${env.BUILD_URL} | Status: ${DEPLOY_STATUS ?: 'UNKNOWN'}"
+                    echo message
                 }
             }
-        }
     }
 }
