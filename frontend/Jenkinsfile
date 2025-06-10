@@ -78,14 +78,14 @@ pipeline {
             }
         }
 
-        stage('Build Frontend') {
+           stage('Build Frontend') {
             steps {
                 dir('frontend') {
                     script {
                         try {
                             sh '''
                             echo "Building frontend image..."
-                            docker-compose build frontend --no-cache
+                            docker-compose build --no-cache frontend
                             
                             echo "Verifying built image..."
                             docker images | grep frontend || echo "No frontend images found"
