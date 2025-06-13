@@ -54,7 +54,7 @@ Dishcovery_Capstone/
 **Diagram Infrastruktur:**
 
 ```
-![Alt text](https://drive.google.com/file/d/1d9RJIZ4tcyRAQo_aajz1L4GIgbq6fCEz/view?usp=sharing)
+![Diagram](https://drive.google.com/uc?export=view&id=1d9RJIZ4tcyRAQo_aajz1L4GIgbq6fCEz)
 ```
 
 ---
