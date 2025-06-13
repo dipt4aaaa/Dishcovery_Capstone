@@ -233,7 +233,7 @@ Contoh body:
 ## 📎 Lampiran
 
 - **Diagram Infrastruktur**  
-  (Lihat di atas / bisa ditambah gambar infrastruktur)
+  (Lihat di atas)
 - **Contoh file konfigurasi**  
   - [docker-compose.yml](./docker-compose.yml)
   - [backend/Dockerfile](./backend/Dockerfile)
