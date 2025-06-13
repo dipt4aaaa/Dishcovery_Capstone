@@ -51,7 +51,7 @@ Dishcovery_Capstone/
 | Orkestrasi  | Docker Compose    | Multi-container, mudah scaling            |
 | Dataset     | CSV               | Resep masakan Indonesia                   |
 
-**Diagram Infrastruktur:**
+## 🖼️ Diagram Infrastruktur:
 ![Diagram Infrastruktur](https://github.com/dipt4aaaa/Dishcovery_Capstone/blob/main/data/Penyediaan%20dan%20automasi%20layanan.png?raw=true)
 
 
