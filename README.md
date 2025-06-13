@@ -54,7 +54,7 @@ Dishcovery_Capstone/
 **Diagram Infrastruktur:**
 
 ```
-![Diagram](https://drive.google.com/uc?export=view&id=1d9RJIZ4tcyRAQo_aajz1L4GIgbq6fCEz)
+![Diagram Infrastruktur](https://github.com/dipt4aaaa/Dishcovery_Capstone/blob/main/data/Penyediaan%20dan%20automasi%20layanan.png?raw=true)
 ```
 
 ---
