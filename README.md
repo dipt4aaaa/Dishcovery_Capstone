@@ -216,7 +216,6 @@ Contoh body:
 - [Ollama LLM](https://ollama.com/)
 - [Docker Compose Guide](https://docs.docker.com/compose/)
 - [TF-IDF & Cosine Similarity](https://en.wikipedia.org/wiki/Tf%E2%80%93idf)
-- [Content-based Filtering](https://towardsdatascience.com/content-based-recommender-systems-3799c6f28c84)
 
 ---
 
