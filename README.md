@@ -52,13 +52,11 @@ Dishcovery_Capstone/
 | Dataset     | CSV               | Resep masakan Indonesia                   |
 
 **Diagram Infrastruktur:**
-
-```
 ![Diagram Infrastruktur](https://github.com/dipt4aaaa/Dishcovery_Capstone/blob/main/data/Penyediaan%20dan%20automasi%20layanan.png?raw=true)
-```
+
 
 ## 🎯 WHY & HOW: Desain dan Implementasi Sistem
-```
+
 ### 💡 WHY (Mengapa desain tersebut dibuat?)
 
 1. **Solusi Praktis Masalah Sehari-hari:**
@@ -102,7 +100,7 @@ Dishcovery_Capstone/
 
    * Cukup dengan `git clone` dan `docker-compose up`, seluruh sistem akan berjalan otomatis tanpa konfigurasi tambahan.
    * Dataset sudah disiapkan, dan semua dependensi terdefinisi di dalam Dockerfile.
-```
+
 ---
 
 ## 🔥 Cara Instalasi & Menjalankan
