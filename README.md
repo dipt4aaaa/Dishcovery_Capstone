@@ -54,16 +54,7 @@ Dishcovery_Capstone/
 **Diagram Infrastruktur:**
 
 ```
-[User] <-browser-> [Frontend (Nginx + HTML)]
-                        |
-                        V
-                [Backend (FastAPI)]
-                        |
-                        V
-            [LLM Service (Ollama)]
-                        |
-                        V
-                 [Dataset Resep]
+![Sample](https://drive.google.com/file/d/1d9RJIZ4tcyRAQo_aajz1L4GIgbq6fCEz/view?usp=sharing)
 ```
 
 ---
