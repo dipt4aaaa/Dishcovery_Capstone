@@ -57,6 +57,52 @@ Dishcovery_Capstone/
 ![Diagram Infrastruktur](https://github.com/dipt4aaaa/Dishcovery_Capstone/blob/main/data/Penyediaan%20dan%20automasi%20layanan.png?raw=true)
 ```
 
+## 🎯 WHY & HOW: Desain dan Implementasi Sistem
+```
+### 💡 WHY (Mengapa desain tersebut dibuat?)
+
+1. **Solusi Praktis Masalah Sehari-hari:**
+   Dishcovery dirancang untuk membantu pengguna menemukan resep berdasarkan bahan yang tersedia di rumah, mengurangi food waste dan mempermudah proses memasak.
+
+2. **Akses Mudah & User-Friendly:**
+   Desain web yang ringan dan responsif memudahkan siapa pun untuk mengakses layanan tanpa perlu instalasi aplikasi tambahan.
+
+3. **Struktur Modular & Scalable:**
+   Sistem berbasis Docker memudahkan deployment, pemeliharaan, dan pengembangan berkelanjutan, baik di lokal maupun cloud.
+
+4. **Pendekatan Terdistribusi & Relevan Akademik:**
+   Arsitektur event-driven dan penggunaan FastAPI mendukung prinsip komputasi terdistribusi modern, menjadikan proyek ini relevan untuk pembelajaran maupun produksi.
+
+### ⚙️ HOW (Bagaimana sistem diimplementasikan?)
+
+1. **Frontend (HTML + Nginx):**
+
+   * Dibuat sederhana dan ringan agar mudah diakses di browser mana pun.
+   * Dihost menggunakan Nginx dalam container terpisah.
+   * Komunikasi ke backend dilakukan melalui reverse proxy.
+
+2. **Backend (FastAPI Python):**
+
+   * API menangani input bahan makanan dari user.
+   * Input diubah menjadi vektor TF-IDF dan dibandingkan dengan database resep (juga dalam vektor).
+   * Sistem menghitung similarity dan memberikan rekomendasi teratas.
+   * Memiliki endpoint tambahan untuk meneruskan pertanyaan ke chatbot (LLM).
+
+3. **LLM Chatbot (Ollama):**
+
+   * Model LLM lokal seperti LLaMA3 digunakan untuk merespons pertanyaan seputar dapur.
+   * Komunikasi antara backend dan LLM menggunakan endpoint HTTP, namun bisa dikembangkan ke skema message broker.
+
+4. **Arsitektur Terdistribusi:**
+
+   * Semua komponen dijalankan secara terisolasi dalam container Docker.
+   * Docker Compose digunakan untuk orkestrasi, sehingga sistem mudah dijalankan ulang di berbagai environment.
+
+5. **Reproduksibilitas Tinggi:**
+
+   * Cukup dengan `git clone` dan `docker-compose up`, seluruh sistem akan berjalan otomatis tanpa konfigurasi tambahan.
+   * Dataset sudah disiapkan, dan semua dependensi terdefinisi di dalam Dockerfile.
+```
 ---
 
 ## 🔥 Cara Instalasi & Menjalankan
