@@ -22,7 +22,7 @@ flowchart TD
     B --> C[Jenkins di AWS menerima trigger]
     C --> D[Checkout kode frontend]
     D --> E[Build Docker Image Frontend]
-    E --> F[Stop & Remove Container Lama (Port 80)]
+    E --> F[Stop & Remove Container Lama - Port 80]
     F --> G[Deploy Container Frontend Baru]
     G --> H[Health Check & Verifikasi Service]
     H --> I[Frontend Siap Diakses untuk Demo/Dinilai Dosen]
