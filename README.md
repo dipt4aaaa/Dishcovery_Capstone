@@ -4,6 +4,38 @@
 
 ---
 
+## 🚚 Deployment & CI/CD 
+
+Untuk mendukung proses otomatis, dan mudah didemokan, Dishcovery Capstone menerapkan sistem CI/CD pada bagian frontend.  
+CI/CD (Continuous Integration & Continuous Deployment) memastikan setiap perubahan kode pada repository GitHub langsung dibangun dan dideploy secara otomatis ke server frontend.
+
+**Teknologi yang digunakan:**
+- **Jenkins** sebagai server CI/CD yang berjalan di AWS (cloud).
+- **GitHub Webhook** sebagai pemicu otomatis setiap ada perubahan (push/pull request) pada repository.
+- **Docker Compose** untuk orkestrasi service.
+
+**Alur Kerja CI/CD Frontend (Visualisasi):**
+
+```mermaid
+flowchart TD
+    A[Developer Push Code ke GitHub] --> B[GitHub Webhook]
+    B --> C[Jenkins di AWS menerima trigger]
+    C --> D[Checkout kode frontend]
+    D --> E[Build Docker Image Frontend]
+    E --> F[Stop & Remove Container Lama (Port 80)]
+    F --> G[Deploy Container Frontend Baru]
+    G --> H[Health Check & Verifikasi Service]
+    H --> I[Frontend Siap Diakses untuk Demo/Dinilai Dosen]
+```
+
+**Penjelasan Simulasi Alur:**
+1. Developer melakukan push kode ke repository GitHub.
+2. GitHub Webhook otomatis mengirim notifikasi ke Jenkins di AWS.
+3. Jenkins menjalankan pipeline: checkout kode, build image frontend, stop container lama, deploy container baru, dan health check.
+4. Jika berhasil, frontend langsung siap diakses/didemokan dosen tanpa proses manual.
+
+---
+
 ## 🚀 Fitur Utama
 
 - **Rekomendasi Resep Otomatis**  
@@ -18,6 +50,8 @@
   Ribuan resep asli Indonesia, sudah diproses dan dibersihkan.
 - **Cloud Ready & Local Friendly**  
   Bisa dijalankan di laptop, server, maupun cloud (dengan/atau tanpa GPU).
+- **CI/CD Frontend Otomatis**  
+  Proses build dan deployment frontend dipercepat dengan pipeline CI/CD menggunakan Jenkins di AWS, terintegrasi dengan GitHub Webhook.
 
 ---
 
@@ -41,7 +75,7 @@ Dishcovery_Capstone/
 
 ---
 
-## ⚙️ Teknologi & Arsitektur
+# ⚙️ Teknologi & Arsitektur
 
 | Komponen    | Teknologi         | Penjelasan                                |
 |-------------|-------------------|-------------------------------------------|
@@ -50,6 +84,7 @@ Dishcovery_Capstone/
 | Frontend    | HTML, Nginx       | Antarmuka pengguna                        |
 | Orkestrasi  | Docker Compose    | Multi-container, mudah scaling            |
 | Dataset     | CSV               | Resep masakan Indonesia                   |
+| **CI/CD**   | Jenkins, GitHub Webhook, AWS | Otomatisasi build & deploy frontend |
 
 **Diagram Infrastruktur:**
 
@@ -146,6 +181,10 @@ Contoh body:
   Cukup clone repo & jalankan docker-compose.  
   Untuk production: tambahkan HTTPS, batasi akses, gunakan env var lebih aman.
 
+- **CI/CD Frontend**  
+  Untuk mempercepat proses deployment frontend, digunakan pipeline CI/CD berbasis Jenkins yang berjalan di AWS.  
+  Setiap ada perubahan pada repository GitHub (push/pull request), GitHub Webhook akan men-trigger Jenkins untuk melakukan build dan deploy otomatis ke server frontend.
+
 ---
 
 ## 🧪 Pengujian & Monitoring
@@ -205,6 +244,8 @@ Contoh body:
   - [frontend/Dockerfile](./frontend/Dockerfile)
   - [backend/app.py](./backend/app.py)
   - [frontend/index.html](./frontend/index.html)
+  - **Pipeline Jenkinsfile (CI/CD Frontend)**  
+    Contoh pipeline dapat ditambahkan pada file `Jenkinsfile` di directori /frontend project.
 - **Log Pengujian & Contoh Output**  
   Lihat hasil log dari `docker-compose logs` atau output API di Postman.
 
